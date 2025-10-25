@@ -1,25 +1,37 @@
-version: "3"
+# version: '3.7'
+
 services:
-  hapi-fhir-jpaserver-start:
+  fhir:
+    container_name: fhir
+    image: "hapiproject/hapi:latest"
     build: .
-    container_name: hapi-fhir-jpaserver-start
-    restart: on-failure
+    restart: unless-stopped
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://hapi-fhir-postgres:5432/hapi"
-      SPRING_DATASOURCE_USERNAME: "admin"
-      SPRING_DATASOURCE_PASSWORD: "admin"
-      SPRING_DATASOURCE_DRIVERCLASSNAME: "org.postgresql.Driver"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/${HAPI_FHIR_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_ENABLED: false
     ports:
       - "8080:8080"
-  hapi-fhir-postgres:
-    image: postgres:15-alpine
-    container_name: hapi-fhir-postgres
-    restart: always
-    environment:
-      POSTGRES_DB: "hapi"
-      POSTGRES_USER: "admin"
-      POSTGRES_PASSWORD: "admin"
-    volumes:
-      - hapi-fhir-postgres:/var/lib/postgresql/data
-volumes:
-  hapi-fhir-postgres:
+    configs:
+      - source: hapi
+        target: /app/config/application.yaml
+    # depends_on:
+    #   - db
+
+
+  # db:
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: admin
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: hapi
+  #   volumes:
+  #     - ./hapi.postgress.data:/var/lib/postgresql/data
+
+configs:
+  hapi:
+     file: ./hapi.application.yaml
